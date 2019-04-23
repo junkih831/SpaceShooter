@@ -14,9 +14,13 @@ public class MoveAgent : MonoBehaviour
 
     private readonly float patrolSpeed = 1.5f;
     private readonly float traceSpeed = 4.0f;
+    // 회전할 때의 속도를 조절하는 계수
+    private float damping = 1.0f;
 
     // NavMeshAgent 컴포넌트를 저장할 변수
     private NavMeshAgent agent;
+    // 적 캐릭터의 Transform 컴포넌트를 저장할 변수
+    private Transform enemyTr;
 
     // 순찰 여부를 판단하는 변수
     private bool _patrolling;
@@ -30,6 +34,8 @@ public class MoveAgent : MonoBehaviour
             if(_patrolling)
             {
                 agent.speed = patrolSpeed;
+                // 순찰 상태의 회전계수
+                damping = 1.0f;
                 MoveWayPoint();
             }
         }
@@ -45,17 +51,29 @@ public class MoveAgent : MonoBehaviour
         {
             _traceTarget = value;
             agent.speed = traceSpeed;
+            // 추적 상태의 회전계수
+            damping = 7.0f;
             TraceTarget(_traceTarget);
         }
+    }
+
+    // NavMeshAgent의 이동 속도에 대한 프로퍼티 정의(getter)
+    public float speed
+    {
+        get { return agent.velocity.magnitude; }
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        // 적 캐릭터의 Transform 컴포넌트 추출 후 변수에 저장
+        enemyTr = GetComponent<Transform>();
         // NavMeshAgent 컴포넌트를 추출한 후 변수에 저장
         agent = GetComponent<NavMeshAgent>();
         // 목적지에 가까워질수록 속도를 줄이는 옵션을 비활성화
         agent.autoBraking = false;
+        // 자동으로 회전하는 기능을 비활성화
+        agent.updateRotation = false;
         agent.speed = patrolSpeed;
 
         // 하이러키 뷰의 WayPointGroup 게임오브젝트를 추출
@@ -108,6 +126,15 @@ public class MoveAgent : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // 적 캐릭터가 이동 중일 때만 회전
+        if(agent.isStopped == false)
+        {
+            // NavMeshAgent가 가야 할 방향 벡터를 쿼터니언 타입의 각도로 변환
+            Quaternion rot = Quaternion.LookRotation(agent.desiredVelocity);
+            // 보간 함수를 사용해 점진적으로 회전시킴
+            enemyTr.rotation = Quaternion.Slerp(enemyTr.rotation, rot, Time.deltaTime * damping);
+        }
+
         // 순찰 모드가 아닐 경우 이후 로직을 수행하지 않음
         if (!_patrolling) return;
 
