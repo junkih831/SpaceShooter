@@ -38,6 +38,13 @@ public class EnemyFire : MonoBehaviour
     // 재장전 사운드를 저장할 변수
     public AudioClip reloadSfx;
 
+    // 적 캐릭터의 총알 프리팹
+    public GameObject Bullet;
+    // 총알의 발사 위치 정보
+    public Transform firePos;
+    // MuzzleFlash의 MeshRenderer 컴포넌트를 저장할 변수
+    public MeshRenderer muzzleFlash;
+    
 
     // Start is called before the first frame update
     void Start()
@@ -49,6 +56,8 @@ public class EnemyFire : MonoBehaviour
         audio = GetComponent<AudioSource>();
 
         wsReload = new WaitForSeconds(reloadTime);
+        // MuzzleFlash를 비활성화
+        muzzleFlash.enabled = false;
 
     }
 
@@ -68,7 +77,8 @@ public class EnemyFire : MonoBehaviour
             // 주인공이 있는 위치까지의 회전 각도 계산
             Quaternion rot = Quaternion.LookRotation(playerTr.position - enemyTr.position);
             // 보간함수를 사용해 점진적으로 회전시킴
-            enemyTr.rotation = Quaternion.Slerp(enemyTr.rotation, rot, Time.deltaTime * damping);
+            enemyTr.rotation = Quaternion.Slerp(enemyTr.rotation, rot, Time.deltaTime * damping);           
+
         }
         
     }
@@ -77,6 +87,13 @@ public class EnemyFire : MonoBehaviour
     {
         animator.SetTrigger(hashFire);
         audio.PlayOneShot(fireSfx, 1.0f);
+        // 초우 화염 효과 코루틴 호출
+        StartCoroutine(ShowMuzzleFlash());
+
+        // 총알을 생성
+        GameObject _bullet = Instantiate(Bullet, firePos.position, firePos.rotation);
+        // 일정 시간이 지난 후 삭제
+        Destroy(_bullet, 3.0f);
 
         // 남은 총알로 재장전 여부를 계산
         isReload = (--currBullet % maxBullet == 0);
@@ -86,8 +103,33 @@ public class EnemyFire : MonoBehaviour
         }
     }
 
+    IEnumerator ShowMuzzleFlash()
+    {
+        // MuzzleFlash 활성화
+        muzzleFlash.enabled = true;
+
+        // 불규칙한 회전 각도를 계산
+        Quaternion rot = Quaternion.Euler(Vector3.forward * Random.Range(0, 360));
+        // MuzzleFlash를 Z축 방향으로 회전
+        muzzleFlash.transform.localRotation = rot;
+        // MuzzleFlash의 스케일을 불규칙하게 조정
+        muzzleFlash.transform.localScale = Vector3.one * Random.Range(1.0f, 2.0f);
+
+        // 텍스처의 Offset 속성에 적용할 불규칙한 값을 생성
+        Vector2 offset = new Vector2(Random.Range(0, 2), Random.Range(0, 2)) * 0.5f;
+        // MuzzleFlash의 머터리얼의 Offset 값을 적용
+        muzzleFlash.material.SetTextureOffset("_MainTex", offset);
+
+        // MuzzleFlash가 보일 동안 잠시 대기
+        yield return new WaitForSeconds(Random.Range(0.05f, 0.2f));
+        // MuzzleFalsh를 다시 비활성화
+        muzzleFlash.enabled = false;
+    }
+
     IEnumerator Reloading()
     {
+        // MuzzleFlash를 비활성화
+        muzzleFlash.enabled = false;
         // 재장전 애니매이션 실행
         animator.SetTrigger(hasReload);
         // 재장전 사운드 발생
