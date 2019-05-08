@@ -43,6 +43,8 @@ public class EnemyAI : MonoBehaviour
     private readonly int hashSpeed = Animator.StringToHash("Speed");
     private readonly int hashDie = Animator.StringToHash("Die");
     private readonly int hashDieIdx = Animator.StringToHash("DieIdx");
+    private readonly int hashOffset = Animator.StringToHash("Offset");
+    private readonly int hashWalkSpeed = Animator.StringToHash("WalkSpeed");
 
 
     private void Awake()
@@ -64,6 +66,10 @@ public class EnemyAI : MonoBehaviour
 
         // 코루틴의 지연시간 생성
         ws = new WaitForSeconds(0.3f);
+        // Cycle Offset 값을 불규칙하게 변경
+        animator.SetFloat(hashOffset, Random.Range(0.0f, 1.0f));
+        // WalkSpeed 값을 불규칙하게 변경
+        animator.SetFloat(hashWalkSpeed, Random.Range(1.0f, 1.2f));
     }
 
     private void OnEnable()
