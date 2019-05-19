@@ -73,3 +73,5 @@ ProjectVersion.txt
 *.ide
 *.ide-shm
 *.ide-wal
+/Assets/03.Prefabs/EffectExamples/TutorialInfo/Icons.meta
+/Assets/TutorialInfo/Icons.meta
